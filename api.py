@@ -4,7 +4,8 @@ import urllib2
 import base64
 import numpy as np
 import mxnet as mx
-# import Image
+import Image
+from io import BytesIO
 
 import nstyle_forward
 
@@ -14,13 +15,12 @@ app = Flask(__name__)
 
 @app.route('/', methods = ['GET', 'POST'])
 def hello_world():
-  if request.method == 'POST':
-    return 'hello world'
+  return 'hello world'
 
-@app.route('/image_stylization/<model>', methods=['POST'])
+@app.route('/image_stylization/<model>/', methods=['POST'])
 def image_stylization(model):
   params_file = os.path.join(MODEL_DIR, model+'.params')
-  if os.path.isfile(params_file):
+  if not os.path.isfile(params_file):
     return jsonify({'ret_code': 2101, 'error': 'Unavailable style!'})
 
   img = request.values.get('image')
@@ -35,17 +35,27 @@ def image_stylization(model):
   except:
     return jsonify({'ret_code': 2103, 'error': 'Invalid image format!'})
 
-  img = nstyle_forward.image_stylizing(img, params_file)
-  img = np.roll(img, 1, axis=-1)
-  img = Image.fromarray(img)
 
-  return _send_image(img, 'jpg')
+  me = 256
+  max_edge = max(img.shape)
+  scale = float(me)/(max_edge)
+  img = mx.image.imresize(img, int(img.shape[0]*scale), int(img.shape[1]*scale))
+  try:
+    img = nstyle_forward.image_stylizing(img, params_file)
+  except:
+    pass
+  # img = np.roll(img, 1, axis=-1)
+  img = Image.fromarray(img)
+  b, g, r = img.split()
+  img = Image.merge("RGB", (r, g, b))
+
+  return _send_image(img, 'png')
 
 def _send_image(pil_img, format):
-  img_io = StringIO()
-  pil_img.save(img_io)
+  img_io = BytesIO()
+  pil_img.save(img_io, format)
   img_io.seek(0)
-  return send_file(img_io, cache_timeout=0)
+  return send_file(img_io, mimetype='image/png', cache_timeout=0)
 
 
 if __name__ == '__main__':

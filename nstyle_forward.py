@@ -61,6 +61,7 @@ def test():
     scale = float(max_edge)/me
     print  img.shape[0]*scale, img.shape[1]*scale
     img = mx.image.imresize(img, int(img.shape[0]*scale), int(img.shape[1]*scale))
+    print img.shape
     out_img = image_stylizing(img, params_file)
     t2 = time.time()
     print 'time: %f'%(t2-t1)
