@@ -5,6 +5,7 @@ MAINTAINER qianyelin
 RUN mkdir /texture_api
 WORKDIR /texture_api
 
-RUN pip install flask
+pip install flask
+apt-get install python-imaging
 
 EXPOSE 5000
