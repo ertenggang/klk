@@ -6,12 +6,15 @@ import numpy as np
 import mxnet as mx
 import Image
 from io import BytesIO
+import resnet_fast_style
 
 import nstyle_forward
 
 MODEL_DIR = 'pretrained'
 
 app = Flask(__name__)
+
+net = resnet_fast_style.style_transfer_net()
 
 @app.route('/', methods = ['GET', 'POST'])
 def hello_world():
@@ -36,14 +39,15 @@ def image_stylization(model):
     return jsonify({'ret_code': 2103, 'error': 'Invalid image format!'})
 
 
-  me = 256
+  me = 600
   max_edge = max(img.shape)
   scale = float(me)/(max_edge)
-  img = mx.image.imresize(img, int(img.shape[0]*scale), int(img.shape[1]*scale))
+  img = mx.image.imresize(img, int(img.shape[1]*scale), int(img.shape[0]*scale))
   try:
-    img = nstyle_forward.image_stylizing(img, params_file)
-  except:
-    pass
+    print('starting processing')
+    img = nstyle_forward.image_stylizing(img,net, params_file)
+  except Exception, e:
+    print e
   # img = np.roll(img, 1, axis=-1)
   img = Image.fromarray(img)
   b, g, r = img.split()

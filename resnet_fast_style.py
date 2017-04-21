@@ -1,6 +1,6 @@
 import mxnet as mx
 
-WORKSPACE = 1024
+WORKSPACE = 4096
 
 def resnet_block(input_sym, ksize, num_filter):
   pad_size = (0,0,0,0,ksize[0]//2, ksize[0]//2, ksize[1]//2, ksize[1]//2)

@@ -4,6 +4,12 @@ import time
 import resnet_fast_style
 import image_process
 
+try:
+  import cv2
+except Exception, e:
+  print e
+  pass
+
 def get_executor(pretrained, input_sym, input_size, ctx):
   # make executor
   if isinstance(input_size, list):
@@ -30,8 +36,7 @@ def get_executor(pretrained, input_sym, input_size, ctx):
   #                     arg_dict=arg_dict)
   return executor
 
-def image_stylizing(img, params_file):
-  net = resnet_fast_style.style_transfer_net()
+def image_stylizing(img, net, params_file):
   pretrained_model = mx.nd.load(params_file)
   img = image_process.preprocessing_image(img)
   img = mx.nd.array(img)
@@ -39,7 +44,11 @@ def image_stylizing(img, params_file):
   # print input_size
   ex = get_executor(pretrained_model, net, input_size, mx.cpu())
   img.copyto(ex.arg_dict['content'])
-  ex.forward()
+  try:
+    print('forward')
+    ex.forward()
+  except Exception, e:
+    print e
   out_img = ex.outputs[0].asnumpy()
   out_img = image_process.postprocessing_image(out_img)
   out_img = out_img[0]
@@ -48,21 +57,26 @@ def image_stylizing(img, params_file):
 def test():
   # test_path = 'train_img/content/'
   # test_imgs = glob.glob(test_path+'*.jpg')
-  max_edge = 256
+  # max_edge = 256
   test_imgs = ['test_img/tree.jpg']
-  params_file = 'pretrained/resnet_starry_e4000.params'
+  params_file = 'pretrained/wave.params'
   for f in test_imgs:
     t1 = time.time()
     img = open(f, 'rb').read()
     img = mx.image.imdecode(img, flag=1, to_rgb=0)
     print img.shape
-    me = max(img.shape)
-    print img.shape
-    scale = float(max_edge)/me
-    print  img.shape[0]*scale, img.shape[1]*scale
-    img = mx.image.imresize(img, int(img.shape[0]*scale), int(img.shape[1]*scale))
+    # me = max(img.shape)
+    # print img.shape
+    # scale = float(max_edge)/me
+    # img = mx.image.imresize(img, int(img.shape[1]*scale), int(img.shape[0]*scale))
     print img.shape
     out_img = image_stylizing(img, params_file)
+    if cv2:
+      cv2.imshow('', out_img)
+      cv2.waitKey(0)
+      file = 'output.jpg'
+      cv2.imwrite(file, out_img)
+
     t2 = time.time()
     print 'time: %f'%(t2-t1)
 
